@@ -21,18 +21,18 @@ Copy prompt chỉ với **1 click** để sử dụng trong:
 Hiện tại extension được cài đặt bằng **Load Unpacked**.
 
 ### Bước 1: Tải source code
-# 1. Truy cập repository GitHub
+#### 1. Truy cập repository GitHub
 Mở link repository trên GitHub: https://github.com/pirateson/extension-topas-prompt-library
 <img width="1913" height="879" alt="image" src="https://github.com/user-attachments/assets/a9f76959-7623-40b6-8a1b-fef686527869" />
 
-# 2. Nhấn nút **Code**
+#### 2. Nhấn nút **Code**
 Ở góc bên phải phía trên danh sách file, nhấn nút: Code
 
-# 3. Chọn **Download ZIP**
+#### 3. Chọn **Download ZIP**
 Trong menu hiện ra chọn: Download ZIP
 GitHub sẽ tải về một file dạng: extension-topas-prompt-library-main.zip
 
-# 4. Giải nén file
+#### 4. Giải nén file
 Sau khi tải xong:
 1. Chuột phải vào file `.zip`
 2. Chọn Extract All... hoặc Giải nén tại đây
