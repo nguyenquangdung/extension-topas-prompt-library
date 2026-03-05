@@ -1,0 +1,24 @@
+{
+    
+    "manifest_version": 3,
+    "name": "Topas Prompt Library",
+    "version": "1.0.0",
+    "description": "Quick access to Topas Prompt Library via Side Panel.",
+    "permissions": [
+        "sidePanel",
+        "storage",
+        "identity"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "side_panel": {
+        "default_path": "index.html"
+    },
+    "action": {
+        "default_title": "Open Topas Prompt Library"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://yhrxfnjpgurchgzvjtqw.supabase.co https://*.supabase.co; img-src 'self' https: data:;"
+    }
+}
