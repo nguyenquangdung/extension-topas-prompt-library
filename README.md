@@ -20,7 +20,7 @@ Copy prompt chỉ với **1 click** để sử dụng trong:
 # 2. Cài đặt Extension (Chế độ Developer)
 Hiện tại extension được cài đặt bằng **Load Unpacked**.
 
-## Bước 1: Tải source code
+### Bước 1: Tải source code
 # 1. Truy cập repository GitHub
 Mở link repository trên GitHub: https://github.com/pirateson/extension-topas-prompt-library
 <img width="1913" height="879" alt="image" src="https://github.com/user-attachments/assets/a9f76959-7623-40b6-8a1b-fef686527869" />
@@ -38,41 +38,41 @@ Sau khi tải xong:
 2. Chọn Extract All... hoặc Giải nén tại đây
 Sau khi giải nén bạn sẽ có thư mục: extension-topas-prompt-library-main
 
-## Bước 2: Mở Chrome Extensions
+### Bước 2: Mở Chrome Extensions
 Mở trình duyệt Chrome và truy cập: chrome://extensions
 <img width="1916" height="982" alt="image" src="https://github.com/user-attachments/assets/3abd63de-0a74-4b77-8867-643f875406f8" />
 
-## Bước 3: Bật Developer Mode
+### Bước 3: Bật Developer Mode
 Góc trên bên phải bật: Developer mode
 
-## Bước 4: Load Extension
+### Bước 4: Load Extension
 Nhấn: Load unpacked
 Chọn thư mục: extension-topas-prompt-library
 Sau khi cài đặt thành công bạn sẽ thấy extension: Topas Prompt Library
 
 # 4. Cách sử dụng
 
-## Bước 1: Mở Extension
+### Bước 1: Mở Extension
 Click vào icon extension trên thanh công cụ Chrome.
 Side Panel sẽ mở ra.
 
-## Bước 2: Đăng nhập
+### Bước 2: Đăng nhập
 Nhấn: Login with Google
 Sau khi đăng nhập thành công bạn sẽ vào được thư viện prompt.
 
-## Bước 3: Chọn Market
+### Bước 3: Chọn Market
 Ở phía trên bạn có thể chọn **Market**.
 
-## Bước 4: Chọn Topic
+### Bước 4: Chọn Topic
 Sau khi chọn market, bạn có thể lọc prompt theo **Topic**.
 
-## Bước 5: Tìm kiếm Prompt
+### Bước 5: Tìm kiếm Prompt
 Sử dụng ô: Search prompts... để tìm prompt theo từ khóa.
 
-## Bước 6: Xem chi tiết Prompt
+### Bước 6: Xem chi tiết Prompt
 Click vào một prompt để xem nội dung đầy đủ.
 
-## Bước 7: Copy Prompt
+### Bước 7: Copy Prompt
 Nhấn nút: Copy Prompt hoặc icon copy trên card prompt.
 Sau đó paste vào AI bạn muốn sử dụng.
 
@@ -81,16 +81,16 @@ Bạn có thể ghim prompt thường dùng bằng icon: 📌 Pin
 Prompt sẽ xuất hiện trong mục: Pinned
 
 # 6. Khắc phục sự cố
-## Không đăng nhập được
+### Không đăng nhập được
 Kiểm tra:
 * Chrome có chặn popup không
 * Kết nối internet
 * tài khoản Google hợp lệ
 
-## Extension không load
+### Extension không load
 Thử: Reload extension tại: chrome://extensions
 
-## Không thấy prompt
+### Không thấy prompt
 Kiểm tra:
 * bạn đã được cấp quyền market?
 
