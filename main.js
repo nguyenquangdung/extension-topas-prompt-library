@@ -144,6 +144,12 @@ async function loadPrompts() {
     const { data: prompts } = await query;
     state.prompts = prompts || [];
     renderPrompts();
+    
+    // Cache all prompts for content script (simplified version)
+    const { data: allPrompts } = await supabaseClient.from('prompts').select('id, title, content, topic_id');
+    if (allPrompts) {
+        chrome.storage.local.set({ cachedPrompts: allPrompts });
+    }
 }
 
 // --- Rendering ---

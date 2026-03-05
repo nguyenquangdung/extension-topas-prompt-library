@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Topas Test Page</title>
+    <style>
+        body { font-family: sans-serif; padding: 50px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        textarea, input { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; }
+        [contenteditable] { border: 1px solid #ccc; padding: 10px; min-height: 100px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Topas Quick Search Test</h1>
+        <p>Try typing <code>/</code> or <code>@</code> in the fields below.</p>
+        
+        <label>Input Field:</label>
+        <input type="text" placeholder="Type / here...">
+        
+        <label>Textarea:</label>
+        <textarea placeholder="Type @ here..."></textarea>
+        
+        <label>Content Editable:</label>
+        <div contenteditable="true">Type / or @ here...</div>
+    </div>
+</body>
+</html>

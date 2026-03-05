@@ -1,5 +1,5 @@
 {
-    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5ijqjCwA/hTWKX8BkfiqnB+PV/oJ9msi1AHr4VezHaUq8qntuHlU5Wi4KruJe4oL2KF4xRRusBajcE6pCmiIl53lzhNE2KZKUenNRKwFV+TikATzUD0gSVyLLM7+dq8gBONFzDxTDMcZbku4xSKD5qNvpR6GPqbgljUXyws6h4hLHs+pmVEgeSnYGG5cyRAa3ah7BKvqGJFWtWdPmS/fTscsdaSGiJN23XNg4t/DLzU1bNk8Y7Hr/1hHyVlNpbQkQSmplXTFuvtEvCkEwEVbcn1yrRQFY/nTfEIYf8Okrw4DQcUgY6Q0kRlYgri03kRLItGz559O7MkKDdakL9d3jQIDAQAB",
+    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp9g4bEILnhK5KqGleEQIHoyT/UFPCE9U7zalucO+i+oL3IXqmJjxQsVl0Bs7YlOBRMk070tWZ5VQycuP6g+cmia7k4nAY8GIjDSL1TD8wJ5rtmirqYRe9Pj60+d9wmx8ojzF7yPPtEC0Mt8JkxEAQozNoh28RtaqHjhWM04vbxVdh+CP+F5nr3E2Hn4VdbNFpLd9bn0LNejZwFUXSqyXYtPG4XWkkpi8bnlXto2Az7BNvMkdzm5fV9EfwfMEaoO+l/xUoEfpaeIl6WSxcv0MOtik7Mxkn6fvJHeYh+t1D0GmyHbzDDga1rFpzAo2zK2nLSfIIenm03Je6SUdUWFhTwIDAQAB",
     "manifest_version": 3,
     "name": "Topas Prompt Library",
     "version": "1.0.0",
@@ -7,11 +7,27 @@
     "permissions": [
         "sidePanel",
         "storage",
-        "identity"
+        "identity",
+        "scripting"
     ],
     "background": {
         "service_worker": "background.js"
     },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "css": [
+                "content.css"
+            ],
+            "run_at": "document_idle",
+            "all_frames": true
+        }
+    ],
     "side_panel": {
         "default_path": "index.html"
     },
@@ -20,5 +36,8 @@
     },
     "content_security_policy": {
         "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://yhrxfnjpgurchgzvjtqw.supabase.co https://*.supabase.co; img-src 'self' https: data:;"
-    }
+    },
+    "host_permissions": [
+        "<all_urls>"
+    ]
 }

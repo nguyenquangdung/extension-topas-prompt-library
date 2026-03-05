@@ -1,0 +1,97 @@
+/* Topas Suggestion Popup Styles */
+#topas-suggestion-container {
+    position: fixed !important;
+    z-index: 2147483647 !important;
+    background: white !important;
+    /* Fallback */
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2), 0 8px 15px -6px rgba(0, 0, 0, 0.1) !important;
+    min-width: 280px !important;
+    max-width: 400px !important;
+    max-height: 320px !important;
+    overflow-y: auto !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    padding: 6px !important;
+    display: none;
+    animation: topas-fade-in 0.15s ease-out !important;
+    box-sizing: border-box !important;
+}
+
+@keyframes topas-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.topas-suggestion-item {
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    transition: background 0.1s ease !important;
+    user-select: none !important;
+    box-sizing: border-box !important;
+    margin-bottom: 2px !important;
+}
+
+.topas-suggestion-item:hover,
+.topas-suggestion-item.selected {
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.topas-suggestion-item.selected {
+    background: rgba(59, 130, 246, 0.12) !important;
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.3) !important;
+}
+
+.topas-item-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.4 !important;
+}
+
+.topas-item-preview {
+    font-size: 12px !important;
+    color: #4b5563 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+}
+
+.topas-empty {
+    padding: 16px !important;
+    text-align: center !important;
+    color: #6b7280 !important;
+    font-size: 13px !important;
+}
+
+/* Scrollbar styles */
+#topas-suggestion-container::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#topas-suggestion-container::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+#topas-suggestion-container::-webkit-scrollbar-thumb {
+    background: #d1d5db !important;
+    border-radius: 10px !important;
+}
