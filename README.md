@@ -32,13 +32,15 @@ Mở link repository trên GitHub: https://github.com/pirateson/extension-topas-
 Trong menu hiện ra chọn: Download ZIP
 GitHub sẽ tải về một file dạng: extension-topas-prompt-library-main.zip
 
-#### 4. Chọn **Download ZIP**
-Trong menu hiện ra chọn: Download ZIP
-GitHub sẽ tải về một file dạng: extension-topas-prompt-library-main.zip
-
-#### 5. Xóa đuôi -main trong tên File
+#### 4. Xóa đuôi -main trong tên File
 Khi tải về, hệ thống báo đặt tên File thì xóa đuôi -main, chỉ giữ extension-topas-prompt-library
 Nếu đã lưu rồi thì sửa bằng cách Rename F2 (Fn + F2)
+
+#### 5. Giải nén file
+Sau khi tải xong:
+1. Chuột phải vào file `.zip`
+2. Chọn Extract All... hoặc Giải nén tại đây
+Sau khi giải nén bạn sẽ có thư mục: extension-topas-prompt-library-main
 
 ### Bước 2: Mở Chrome Extensions
 Mở trình duyệt Chrome và truy cập: chrome://extensions
