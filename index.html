@@ -28,6 +28,10 @@
     <header>
       <span class="logo">Topas</span>
       <div id="user-info" style="display: flex; align-items: center; gap: 8px;">
+        <a href="https://topas-prompt-library.pages.dev/#" target="_blank" id="btn-admin" class="btn-icon"
+          title="Go to Admin">
+          <i data-lucide="external-link" width="16"></i>
+        </a>
         <span id="user-initial"
           style="width: 24px; height: 24px; background: var(--brand-50); color: var(--brand-700); display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 700; font-size: 11px;">T</span>
         <button id="btn-logout" style="background: none; border: none; color: var(--slate-400); cursor: pointer;"><i
@@ -36,7 +40,12 @@
     </header>
 
     <div id="market-tabs" class="nav-scroll"></div>
-    <div id="topic-tabs" class="nav-scroll" style="background: var(--slate-50);"></div>
+    <div class="topic-nav-container" style="background: var(--slate-50); border-bottom: 1px solid var(--slate-100);">
+      <div id="topic-tabs" class="nav-scroll" style="border-bottom: none;"></div>
+      <button id="btn-add-topic" class="btn-row" title="Add Topic">
+        <i data-lucide="plus" width="14"></i> Thêm chủ đề
+      </button>
+    </div>
 
     <div class="search-container">
       <input type="text" id="input-search" class="search-input" placeholder="Search prompts...">
@@ -50,6 +59,9 @@
       <div id="all-section">
         <h2 class="section-title">All Prompts</h2>
         <div id="prompt-list"></div>
+        <button id="btn-add-prompt" class="btn-row" style="margin-top: 8px;" title="Add Prompt">
+          <i data-lucide="plus" width="14"></i> Thêm prompt
+        </button>
       </div>
     </main>
   </div>
@@ -59,13 +71,40 @@
     <div class="detail-header">
       <button id="btn-back" style="background: none; border: none; cursor: pointer; color: var(--slate-600);"><i
           data-lucide="arrow-left" width="20"></i></button>
-      <h3 id="detail-title" class="prompt-title" style="margin: 0;">Prompt Title</h3>
+      <h3 id="detail-title" class="prompt-title" style="margin: 0; flex: 1;">Prompt Title</h3>
+      <button id="btn-edit-prompt" class="btn-icon" title="Edit Prompt">
+        <i data-lucide="edit-3" width="18"></i>
+      </button>
     </div>
     <div id="detail-content" class="detail-content"></div>
     <button id="btn-copy" class="btn-copy">
       <i data-lucide="copy" width="18"></i>
       Copy Prompt
     </button>
+  </div>
+
+  <!-- Modal for Add/Edit -->
+  <div id="modal-container" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Add New</h3>
+        <button id="btn-modal-close" class="btn-icon"><i data-lucide="x" width="18"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="topic-form" class="hidden">
+          <input type="text" id="input-topic-name" class="search-input" placeholder="Topic Name">
+        </div>
+        <div id="prompt-form" class="hidden">
+          <input type="text" id="input-prompt-title" class="search-input" placeholder="Prompt Title"
+            style="margin-bottom: 12px;">
+          <textarea id="input-prompt-content" class="search-input" placeholder="Prompt Content"
+            style="height: 120px; resize: none;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-modal-save" class="btn-copy" style="margin: 0; width: 100%;">Save</button>
+      </div>
+    </div>
   </div>
 
   <script src="main.js"></script>

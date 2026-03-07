@@ -169,127 +169,114 @@ function handleKeyDown(e) {
 }
 
 function insertPrompt(prompt) {
-    if (!lastActiveElement) return
+    if (!lastActiveElement) return;
 
-    const text = prompt.content || ""
-    const el = lastActiveElement
-    el.focus()
+    const text = prompt.content || "";
+    const el = lastActiveElement;
+    el.focus();
+
+    // --- BẮT ĐẦU ĐIỀU KIỆN RIÊNG CHO GOOGLE FLOW ---
+    const isGoogleFlow = window.location.href.includes("labs.google/fx");
+
+    if (isGoogleFlow) {
+        const val = getInputValue(el);
+        const pos = getSelectionOffset(el);
+        const textBeforeCursor = val.substring(0, pos);
+        const match = textBeforeCursor.match(/(\?)([a-zA-Z0-9 ]*)$/);
+
+        if (match) {
+            const len = match[0].length;
+            if (el.isContentEditable) {
+                const sel = window.getSelection();
+                if (sel.rangeCount > 0) {
+                    // Thay vì xóa, ta bôi đen ngược lại đúng bằng độ dài trigger (?abc)
+                    for (let i = 0; i < len; i++) {
+                        sel.modify("extend", "backward", "character");
+                    }
+                    // Chèn đè text mới vào vùng đang bôi đen (1 thao tác duy nhất)
+                    document.execCommand("insertText", false, text);
+                }
+            } else {
+                const start = el.selectionStart - len;
+                el.setSelectionRange(start, el.selectionEnd);
+                document.execCommand("insertText", false, text);
+            }
+            // Trigger sự kiện để Google Flow cập nhật dữ liệu
+            el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+            hidePopup();
+            return; // KẾT THÚC TẠI ĐÂY ĐỂ KHÔNG CHẠY LOGIC CŨ
+        }
+    }
+    // --- KẾT THÚC ĐIỀU KIỆN RIÊNG ---
+
 
     // 1. DELETE TRIGGER (?abc)
-    const val = getInputValue(el)
-    const pos = getSelectionOffset(el)
-    const textBeforeCursor = val.substring(0, pos)
-    const match = textBeforeCursor.match(/(\?)([a-zA-Z0-9 ]*)$/)
+    const val = getInputValue(el);
+    const pos = getSelectionOffset(el);
+    const textBeforeCursor = val.substring(0, pos);
+    const match = textBeforeCursor.match(/(\?)([a-zA-Z0-9 ]*)$/);
 
     if (match) {
-        const len = match[0].length
+        const len = match[0].length;
         if (el.isContentEditable) {
-            const sel = window.getSelection()
-            // Extend selection backward to cover the trigger
+            const sel = window.getSelection();
             for (let i = 0; i < len; i++) {
-                sel.modify("extend", "backward", "character")
+                sel.modify("extend", "backward", "character");
             }
-            document.execCommand("delete")
+            document.execCommand("delete");
         } else {
-            const start = el.selectionStart - len
-            const end = el.selectionEnd
-            el.setSelectionRange(start, end)
-            document.execCommand("delete")
+            const start = el.selectionStart - len;
+            const end = el.selectionEnd;
+            el.setSelectionRange(start, end);
+            document.execCommand("delete");
         }
     }
 
     let inserted = false
 
-    // =========================
-    // =========================
     // STRATEGY 1 — Clipboard Paste
-    // Best for Gemini / Flow
-    // =========================
-
     try {
-
         const before = getInputValue(el)
-
         const dt = new DataTransfer()
         dt.setData("text/plain", text)
-
         const pasteEvent = new ClipboardEvent("paste", {
-            clipboardData: dt,
-            bubbles: true,
-            cancelable: true
-        })
-
-        el.dispatchEvent(pasteEvent)
-
-        const after = getInputValue(el)
-
-        if (after !== before) {
-            inserted = true
-        }
-
+            clipboardData: dt, bubbles: true, cancelable: true
+        });
+        el.dispatchEvent(pasteEvent);
+        if (getInputValue(el) !== before) inserted = true;
     } catch (e) { }
 
-
-    // =========================
     // STRATEGY 2 — execCommand
-    // Best for Claude / Notion
-    // =========================
     if (!inserted) {
-        try {
-            inserted = document.execCommand("insertText", false, text)
-        } catch (e) { }
+        try { inserted = document.execCommand("insertText", false, text); } catch (e) { }
     }
 
-
-    // =========================
     // STRATEGY 3 — Range API
-    // Best for ChatGPT / Grok
-    // =========================
     if (!inserted && el.isContentEditable) {
         try {
             const sel = window.getSelection()
             if (sel.rangeCount > 0) {
                 const range = sel.getRangeAt(0)
                 range.deleteContents()
-
                 const node = document.createTextNode(text)
                 range.insertNode(node)
-
                 range.setStartAfter(node)
                 range.setEndAfter(node)
-
                 sel.removeAllRanges()
                 sel.addRange(range)
-
-                el.dispatchEvent(new InputEvent("input", {
-                    bubbles: true,
-                    inputType: "insertText",
-                    data: text
-                }))
-
+                el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }))
                 el.dispatchEvent(new Event("change", { bubbles: true }))
-
                 inserted = true
             }
         } catch (e) { }
     }
 
-
-    // =========================
     // STRATEGY 4 — Native Setter
-    // Fallback for textarea / input
-    // =========================
     if (!inserted && el.value !== undefined) {
-        const nativeSetter =
-            Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set ||
-            Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set
-
-        if (nativeSetter) {
-            nativeSetter.call(el, text)
-        } else {
-            el.value = text
-        }
-
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set ||
+            Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        if (nativeSetter) nativeSetter.call(el, text);
+        else el.value = text;
         el.dispatchEvent(new Event("input", { bubbles: true }))
         inserted = true
     }

@@ -144,7 +144,7 @@ async function loadPrompts() {
     const { data: prompts } = await query;
     state.prompts = prompts || [];
     renderPrompts();
-    
+
     // Cache all prompts for content script (simplified version)
     const { data: allPrompts } = await supabaseClient.from('prompts').select('id, title, content, topic_id');
     if (allPrompts) {
@@ -352,6 +352,93 @@ function attachGlobalEvents() {
         state.searchQuery = e.target.value;
         clearTimeout(state.searchTimeout);
         state.searchTimeout = setTimeout(loadPrompts, 300);
+    };
+
+    // --- Modal Logic ---
+    const modal = {
+        container: document.getElementById('modal-container'),
+        title: document.getElementById('modal-title'),
+        topicForm: document.getElementById('topic-form'),
+        promptForm: document.getElementById('prompt-form'),
+        topicName: document.getElementById('input-topic-name'),
+        promptTitle: document.getElementById('input-prompt-title'),
+        promptContent: document.getElementById('input-prompt-content'),
+        close: document.getElementById('btn-modal-close'),
+        save: document.getElementById('btn-modal-save')
+    };
+
+    let modalMode = 'topic'; // 'topic' or 'prompt'
+    let editId = null;
+
+    const showModal = (mode, id = null) => {
+        modalMode = mode;
+        editId = id;
+        modal.container.classList.remove('hidden');
+        modal.topicForm.classList.toggle('hidden', mode !== 'topic');
+        modal.promptForm.classList.toggle('hidden', mode !== 'prompt');
+
+        if (mode === 'topic') {
+            modal.title.textContent = 'Add New Topic';
+            modal.topicName.value = '';
+        } else if (mode === 'prompt') {
+            if (id) {
+                modal.title.textContent = 'Edit Prompt';
+                modal.promptTitle.value = state.currentPrompt.title;
+                modal.promptContent.value = state.currentPrompt.content;
+            } else {
+                modal.title.textContent = 'Add New Prompt';
+                modal.promptTitle.value = '';
+                modal.promptContent.value = '';
+            }
+        }
+    };
+
+    const hideModal = () => modal.container.classList.add('hidden');
+
+    modal.close.onclick = hideModal;
+    window.onclick = (e) => { if (e.target === modal.container) hideModal(); };
+
+    document.getElementById('btn-add-topic').onclick = () => showModal('topic');
+    document.getElementById('btn-add-prompt').onclick = () => showModal('prompt');
+    document.getElementById('btn-edit-prompt').onclick = () => showModal('prompt', state.currentPrompt.id);
+
+    modal.save.onclick = async () => {
+        try {
+            if (modalMode === 'topic') {
+                const name = modal.topicName.value.trim();
+                if (!name) return;
+                const { error } = await supabaseClient.from('topics').insert([{
+                    name,
+                    market_id: state.selectedMarketId
+                }]);
+                if (error) throw error;
+            } else {
+                const title = modal.promptTitle.value.trim();
+                const content = modal.promptContent.value.trim();
+                if (!title || !content) return;
+
+                if (editId) {
+                    const { error } = await supabaseClient.from('prompts').update({ title, content }).eq('id', editId);
+                    if (error) throw error;
+                    state.currentPrompt.title = title;
+                    state.currentPrompt.content = content;
+                    showDetail(state.currentPrompt);
+                } else {
+                    const { error } = await supabaseClient.from('prompts').insert([{
+                        title,
+                        content,
+                        topic_id: state.selectedTopicId,
+                        market_id: state.selectedMarketId
+                    }]);
+                    if (error) throw error;
+                }
+            }
+            hideModal();
+            modalMode === 'topic' ? loadTopics() : loadPrompts();
+        } catch (err) {
+            console.error("Save error:", err);
+            alert("Lỗi khi lưu: " + err.message);
+        }
     };
 }
 
