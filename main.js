@@ -32,49 +32,47 @@ const state = {
 const screens = {
     login: document.getElementById('login-screen'),
     app: document.getElementById('app-screen'),
-    detail: document.getElementById('detail-overlay')
+    detail: document.getElementById('detail-overlay'),
+    settings: document.getElementById('settings-screen')
 };
 
 const components = {
-    marketTabs: document.getElementById('market-tabs'),
-    topicTabs: document.getElementById('topic-tabs'),
+    marketSelect: document.getElementById('select-market'),
+    topicSelect: document.getElementById('select-topic'),
     promptList: document.getElementById('prompt-list'),
     pinnedList: document.getElementById('pinned-list'),
     searchInput: document.getElementById('input-search'),
     detailTitle: document.getElementById('detail-title'),
     detailContent: document.getElementById('detail-content'),
-    userInitial: document.getElementById('user-initial'),
+    triggerInput: document.getElementById('input-trigger-char'),
+    navHome: document.querySelectorAll('#nav-home, #nav-home-settings'),
+    navWebsite: document.querySelectorAll('#nav-website, #nav-website-settings'),
+    navSettings: document.querySelectorAll('#nav-settings, #nav-settings-settings'),
 };
 
 // --- Initialization ---
 async function init() {
     console.group("Topas App Initialization");
-    console.log("Starting init process...");
-
     try {
-        // Load pinned IDs from storage
-        chrome.storage.local.get(['pinnedIds'], (result) => {
+        // Load pinned IDs and settings from storage
+        chrome.storage.local.get(['pinnedIds', 'triggerChar'], (result) => {
             state.pinnedIds = result.pinnedIds || [];
-            console.log("Pinned IDs loaded:", state.pinnedIds);
+            if (result.triggerChar) {
+                components.triggerInput.value = result.triggerChar;
+            } else {
+                components.triggerInput.value = '?';
+                chrome.storage.local.set({ triggerChar: '?' });
+            }
         });
 
-        console.log("Checking for existing session...");
         const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-
-        if (sessionError) {
-            console.error("Error getting session:", sessionError);
-        }
-
         if (session) {
-            console.log("Session found for user:", session.user.email);
             handleLogin(session.user);
         } else {
-            console.log("No active session, showing login screen.");
             showScreen('login');
         }
 
         supabaseClient.auth.onAuthStateChange((event, session) => {
-            console.log("Auth state change event:", event);
             if (session) {
                 handleLogin(session.user);
             } else {
@@ -90,9 +88,7 @@ async function init() {
 
 async function handleLogin(user) {
     state.user = user;
-    components.userInitial.textContent = user.email.charAt(0).toUpperCase();
     showScreen('app');
-
     await loadMarkets();
 }
 
@@ -100,7 +96,12 @@ function showScreen(name) {
     Object.keys(screens).forEach(key => {
         screens[key].classList.toggle('hidden', key !== name);
     });
-    if (name === 'detail') screens.detail.classList.remove('hidden');
+    // Update bottom nav active state
+    if (name === 'app' || name === 'settings') {
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.toggle('active', el.id.includes(name === 'app' ? 'home' : 'settings'));
+        });
+    }
 }
 
 // --- Data Fetching ---
@@ -108,11 +109,9 @@ async function loadMarkets() {
     const { data: markets } = await supabaseClient.from('markets').select('*').order('name');
     state.markets = markets || [];
 
-    // Get user roles
     const { data: roles } = await supabaseClient.from('user_market_roles').select('market_id').eq('user_id', state.user.id);
     const allowedIds = roles?.map(r => r.market_id) || [];
 
-    // check if user is super admin
     const { data: userProfile } = await supabaseClient.from('users').select('is_super_admin').eq('id', state.user.id).single();
 
     if (!userProfile?.is_super_admin) {
@@ -145,7 +144,6 @@ async function loadPrompts() {
     state.prompts = prompts || [];
     renderPrompts();
 
-    // Cache all prompts for content script (simplified version)
     const { data: allPrompts } = await supabaseClient.from('prompts').select('id, title, content, topic_id');
     if (allPrompts) {
         chrome.storage.local.set({ cachedPrompts: allPrompts });
@@ -154,45 +152,16 @@ async function loadPrompts() {
 
 // --- Rendering ---
 function renderMarkets() {
-    components.marketTabs.innerHTML = '';
-    state.markets.forEach(m => {
-        const tab = document.createElement('div');
-        tab.className = `tab ${state.selectedMarketId === m.id ? 'active' : ''}`;
-        tab.textContent = m.name;
-        tab.onclick = () => {
-            state.selectedMarketId = m.id;
-            renderMarkets();
-            loadTopics();
-        };
-        components.marketTabs.appendChild(tab);
-    });
+    components.marketSelect.innerHTML = state.markets.map(m =>
+        `<option value="${m.id}" ${state.selectedMarketId === m.id ? 'selected' : ''}>${m.name}</option>`
+    ).join('');
 }
 
 function renderTopics() {
-    components.topicTabs.innerHTML = '';
-
-    // All Topics opt
-    const allTab = document.createElement('div');
-    allTab.className = `tab ${!state.selectedTopicId ? 'active' : ''}`;
-    allTab.textContent = 'All Topics';
-    allTab.onclick = () => {
-        state.selectedTopicId = null;
-        renderTopics();
-        loadPrompts();
-    };
-    components.topicTabs.appendChild(allTab);
-
-    state.topics.forEach(t => {
-        const tab = document.createElement('div');
-        tab.className = `tab ${state.selectedTopicId === t.id ? 'active' : ''}`;
-        tab.textContent = t.name;
-        tab.onclick = () => {
-            state.selectedTopicId = t.id;
-            renderTopics();
-            loadPrompts();
-        };
-        components.topicTabs.appendChild(tab);
-    });
+    components.topicSelect.innerHTML = `<option value="">All Topics</option>` +
+        state.topics.map(t =>
+            `<option value="${t.id}" ${state.selectedTopicId === t.id ? 'selected' : ''}>${t.name}</option>`
+        ).join('');
 }
 
 function renderPrompts() {
@@ -206,7 +175,6 @@ function renderPrompts() {
     otherPrompts.forEach(p => components.promptList.appendChild(createPromptCard(p, false)));
 
     document.getElementById('pinned-section').classList.toggle('hidden', pinnedPrompts.length === 0);
-
     if (window.lucide) lucide.createIcons();
 }
 
@@ -237,12 +205,10 @@ function createPromptCard(prompt, isPinned) {
 
         if (copyBtn) {
             navigator.clipboard.writeText(prompt.content || '');
-            const originalHtml = copyBtn.innerHTML;
+            const originalIcon = copyBtn.innerHTML;
             copyBtn.innerHTML = '<i data-lucide="check" width="14"></i>';
-            copyBtn.classList.add('success');
             setTimeout(() => {
-                copyBtn.innerHTML = originalHtml;
-                copyBtn.classList.remove('success');
+                copyBtn.innerHTML = originalIcon;
                 if (window.lucide) lucide.createIcons();
             }, 1000);
             return;
@@ -268,79 +234,47 @@ function showDetail(prompt) {
     state.currentPrompt = prompt;
     components.detailTitle.textContent = prompt.title;
     components.detailContent.textContent = prompt.content;
-    showScreen('detail');
+    screens.detail.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
 }
 
 function attachGlobalEvents() {
-    console.log("Attaching global events...");
-
     const loginBtn = document.getElementById('btn-login-google');
     if (loginBtn) {
         loginBtn.onclick = async () => {
-            console.log(">>> Login button clicked! Using launchWebAuthFlow <<<");
             try {
                 const redirectUrl = chrome.identity.getRedirectURL();
-                console.log("Redirect URL:", redirectUrl);
-
                 const { data, error } = await supabaseClient.auth.signInWithOAuth({
                     provider: 'google',
-                    options: {
-                        redirectTo: redirectUrl,
-                        skipBrowserRedirect: true
-                    }
+                    options: { redirectTo: redirectUrl, skipBrowserRedirect: true }
                 });
 
                 if (error) throw error;
 
-                console.log("OAuth URL obtained, launching flow...");
-                chrome.identity.launchWebAuthFlow(
-                    {
-                        url: data.url,
-                        interactive: true
-                    },
-                    async (responseUrl) => {
-                        if (chrome.runtime.lastError) {
-                            console.error("Auth flow error:", chrome.runtime.lastError);
-                            return;
-                        }
+                chrome.identity.launchWebAuthFlow({ url: data.url, interactive: true }, async (responseUrl) => {
+                    const url = new URL(responseUrl);
+                    const access_token = url.hash.match(/access_token=([^&]+)/)?.[1];
+                    const refresh_token = url.hash.match(/refresh_token=([^&]+)/)?.[1];
 
-                        console.log("Auth flow response received.");
-                        const url = new URL(responseUrl);
-                        const access_token = url.hash.match(/access_token=([^&]+)/)?.[1];
-                        const refresh_token = url.hash.match(/refresh_token=([^&]+)/)?.[1];
-
-                        if (access_token && refresh_token) {
-                            console.log("Tokens found, setting Supabase session...");
-                            await supabaseClient.auth.setSession({
-                                access_token,
-                                refresh_token
-                            });
-                            console.log("Session set successfully.");
-                        } else {
-                            console.error("Tokens not found in response URL hash.");
-                        }
+                    if (access_token && refresh_token) {
+                        await supabaseClient.auth.setSession({ access_token, refresh_token });
                     }
-                );
+                });
             } catch (err) {
                 console.error("Login error:", err);
                 alert("Lỗi đăng nhập: " + err.message);
             }
         };
-        console.log("Login button click handler assigned.");
-    } else {
-        console.error("CRITICAL: btn-login-google NOT FOUND in document!");
     }
 
     document.getElementById('btn-logout').onclick = () => supabaseClient.auth.signOut();
-
-    document.getElementById('btn-back').onclick = () => showScreen('app');
+    document.getElementById('btn-back').onclick = () => screens.detail.classList.add('hidden');
 
     document.getElementById('btn-copy').onclick = () => {
         navigator.clipboard.writeText(state.currentPrompt.content);
         const btn = document.getElementById('btn-copy');
         const original = btn.innerHTML;
-        btn.innerHTML = '<i data-lucide="check" width="18"></i> Copied!';
+        btn.innerHTML = '<i data-lucide="check" width="20"></i> Copied!';
         if (window.lucide) lucide.createIcons();
         setTimeout(() => {
             btn.innerHTML = original;
@@ -354,7 +288,36 @@ function attachGlobalEvents() {
         state.searchTimeout = setTimeout(loadPrompts, 300);
     };
 
-    // --- Modal Logic ---
+    components.marketSelect.onchange = (e) => {
+        state.selectedMarketId = e.target.value;
+        loadTopics();
+    };
+
+    components.topicSelect.onchange = (e) => {
+        state.selectedTopicId = e.target.value || null;
+        loadPrompts();
+    };
+
+    // Bottom Nav
+    components.navHome.forEach(el => el.onclick = () => showScreen('app'));
+    components.navWebsite.forEach(el => el.onclick = () => window.open('https://topas-prompt-library.pages.dev', '_blank'));
+    components.navSettings.forEach(el => el.onclick = () => showScreen('settings'));
+
+    // Settings Save
+    document.getElementById('btn-settings-save').onclick = () => {
+        const triggerChar = components.triggerInput.value.trim() || '?';
+        chrome.storage.local.set({ triggerChar }, () => {
+            const btn = document.getElementById('btn-settings-save');
+            const original = btn.textContent;
+            btn.textContent = 'Saved!';
+            setTimeout(() => {
+                btn.textContent = original;
+                showScreen('app');
+            }, 1000);
+        });
+    };
+
+    // Modal
     const modal = {
         container: document.getElementById('modal-container'),
         title: document.getElementById('modal-title'),
@@ -367,7 +330,7 @@ function attachGlobalEvents() {
         save: document.getElementById('btn-modal-save')
     };
 
-    let modalMode = 'topic'; // 'topic' or 'prompt'
+    let modalMode = 'topic';
     let editId = null;
 
     const showModal = (mode, id = null) => {
@@ -380,7 +343,7 @@ function attachGlobalEvents() {
         if (mode === 'topic') {
             modal.title.textContent = 'Add New Topic';
             modal.topicName.value = '';
-        } else if (mode === 'prompt') {
+        } else {
             if (id) {
                 modal.title.textContent = 'Edit Prompt';
                 modal.promptTitle.value = state.currentPrompt.title;
@@ -394,12 +357,11 @@ function attachGlobalEvents() {
     };
 
     const hideModal = () => modal.container.classList.add('hidden');
-
     modal.close.onclick = hideModal;
     window.onclick = (e) => { if (e.target === modal.container) hideModal(); };
 
+    document.getElementById('btn-add-prompt-float').onclick = () => showModal('prompt');
     document.getElementById('btn-add-topic').onclick = () => showModal('topic');
-    document.getElementById('btn-add-prompt').onclick = () => showModal('prompt');
     document.getElementById('btn-edit-prompt').onclick = () => showModal('prompt', state.currentPrompt.id);
 
     modal.save.onclick = async () => {
@@ -407,37 +369,27 @@ function attachGlobalEvents() {
             if (modalMode === 'topic') {
                 const name = modal.topicName.value.trim();
                 if (!name) return;
-                const { error } = await supabaseClient.from('topics').insert([{
-                    name,
-                    market_id: state.selectedMarketId
-                }]);
-                if (error) throw error;
+                await supabaseClient.from('topics').insert([{ name, market_id: state.selectedMarketId }]);
             } else {
                 const title = modal.promptTitle.value.trim();
                 const content = modal.promptContent.value.trim();
                 if (!title || !content) return;
 
                 if (editId) {
-                    const { error } = await supabaseClient.from('prompts').update({ title, content }).eq('id', editId);
-                    if (error) throw error;
+                    await supabaseClient.from('prompts').update({ title, content }).eq('id', editId);
                     state.currentPrompt.title = title;
                     state.currentPrompt.content = content;
                     showDetail(state.currentPrompt);
                 } else {
-                    const { error } = await supabaseClient.from('prompts').insert([{
-                        title,
-                        content,
-                        topic_id: state.selectedTopicId,
-                        market_id: state.selectedMarketId
+                    await supabaseClient.from('prompts').insert([{
+                        title, content, topic_id: state.selectedTopicId, market_id: state.selectedMarketId
                     }]);
-                    if (error) throw error;
                 }
             }
             hideModal();
             modalMode === 'topic' ? loadTopics() : loadPrompts();
         } catch (err) {
             console.error("Save error:", err);
-            alert("Lỗi khi lưu: " + err.message);
         }
     };
 }
@@ -448,8 +400,5 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Register events immediately on script load
 attachGlobalEvents();
-
-// Start initialization
 init();

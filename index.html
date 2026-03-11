@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Topas Library</title>
+  <title>Topas Prompt Library</title>
   <link rel="stylesheet" href="index.css">
   <script src="lib/supabase-lib.js"></script>
   <script src="lib/lucide.min.js"></script>
@@ -13,9 +13,12 @@
 <body>
   <!-- Login Screen -->
   <div id="login-screen">
-    <div style="margin-bottom: 24px;">
-      <h1 class="logo" style="font-size: 24px; margin-bottom: 8px;">Topas</h1>
-      <p style="color: var(--slate-500); font-size: 14px;">Prompt Library</p>
+    <div style="margin-bottom: 32px;">
+      <div class="logo-icon" style="width: 64px; height: 64px; margin: 0 auto 16px auto; border-radius: 16px;">
+        <i data-lucide="zap" width="32" height="32"></i>
+      </div>
+      <h1 class="logo-name" style="font-size: 32px;">Topas</h1>
+      <p class="logo-tagline" style="font-size: 14px;">Prompt Library</p>
     </div>
     <button id="btn-login-google" class="btn-google">
       <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20" height="20" alt="G">
@@ -26,29 +29,39 @@
   <!-- App Screen -->
   <div id="app-screen" class="hidden">
     <header>
-      <span class="logo">Topas</span>
-      <div id="user-info" style="display: flex; align-items: center; gap: 8px;">
-        <a href="https://topas-prompt-library.pages.dev/#" target="_blank" id="btn-admin" class="btn-icon"
-          title="Go to Admin">
-          <i data-lucide="external-link" width="16"></i>
-        </a>
-        <span id="user-initial"
-          style="width: 24px; height: 24px; background: var(--brand-50); color: var(--brand-700); display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 700; font-size: 11px;">T</span>
-        <button id="btn-logout" style="background: none; border: none; color: var(--slate-400); cursor: pointer;"><i
-            data-lucide="log-out" width="16"></i></button>
+      <div class="header-brand">
+        <img src="logo.png" alt="Topas Logo" class="header-logo">
+        <div class="logo-text-wrapper">
+          <span class="logo-name">Topas</span>
+          <span class="logo-tagline">Prompt Library</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button id="btn-logout" class="btn-icon" title="Logout">
+          <i data-lucide="log-out" width="18"></i>
+        </button>
       </div>
     </header>
 
-    <div id="market-tabs" class="nav-scroll"></div>
-    <div class="topic-nav-container" style="background: var(--slate-50); border-bottom: 1px solid var(--slate-100);">
-      <div id="topic-tabs" class="nav-scroll" style="border-bottom: none;"></div>
-      <button id="btn-add-topic" class="btn-row" title="Add Topic">
+    <div class="filters-container">
+      <div class="select-wrapper">
+        <select id="select-market" class="custom-select"></select>
+        <div class="select-icon"><i data-lucide="chevron-down" width="16"></i></div>
+      </div>
+      <div class="select-wrapper">
+        <select id="select-topic" class="custom-select"></select>
+        <div class="select-icon"><i data-lucide="chevron-down" width="16"></i></div>
+      </div>
+      <button id="btn-add-topic" class="btn-add-topic-inline">
         <i data-lucide="plus" width="14"></i> Thêm chủ đề
       </button>
     </div>
 
     <div class="search-container">
-      <input type="text" id="input-search" class="search-input" placeholder="Search prompts...">
+      <div class="search-input-wrapper">
+        <i data-lucide="search" class="search-icon" width="16"></i>
+        <input type="text" id="input-search" class="search-input" placeholder="Search prompts...">
+      </div>
     </div>
 
     <main id="main-content">
@@ -57,30 +70,84 @@
         <div id="pinned-list"></div>
       </div>
       <div id="all-section">
-        <h2 class="section-title">All Prompts</h2>
+        <h2 class="section-title">Popular Prompts</h2>
         <div id="prompt-list"></div>
-        <button id="btn-add-prompt" class="btn-row" style="margin-top: 8px;" title="Add Prompt">
-          <i data-lucide="plus" width="14"></i> Thêm prompt
-        </button>
       </div>
     </main>
+
+    <button id="btn-add-prompt-float" class="btn-floating-add">
+      <i data-lucide="plus-circle" width="20"></i> Thêm prompt
+    </button>
+
+    <nav class="bottom-nav">
+      <div id="nav-home" class="nav-item active">
+        <i data-lucide="home" width="22"></i>
+        <span style="font-size: 10px; font-weight: 600;">Home</span>
+      </div>
+      <div id="nav-website" class="nav-item">
+        <i data-lucide="external-link" width="22"></i>
+        <span style="font-size: 10px; font-weight: 600;">Website</span>
+      </div>
+      <div id="nav-settings" class="nav-item">
+        <i data-lucide="settings" width="22"></i>
+        <span style="font-size: 10px; font-weight: 600;">Settings</span>
+      </div>
+    </nav>
   </div>
 
   <!-- Detail View Overlay -->
   <div id="detail-overlay" class="detail-overlay hidden">
     <div class="detail-header">
-      <button id="btn-back" style="background: none; border: none; cursor: pointer; color: var(--slate-600);"><i
-          data-lucide="arrow-left" width="20"></i></button>
-      <h3 id="detail-title" class="prompt-title" style="margin: 0; flex: 1;">Prompt Title</h3>
+      <button id="btn-back" class="btn-icon">
+        <i data-lucide="arrow-left" width="20"></i>
+      </button>
+      <h3 id="detail-title" style="margin: 0; flex: 1; font-size: 16px; font-weight: 700;">Prompt Title</h3>
       <button id="btn-edit-prompt" class="btn-icon" title="Edit Prompt">
         <i data-lucide="edit-3" width="18"></i>
       </button>
     </div>
     <div id="detail-content" class="detail-content"></div>
     <button id="btn-copy" class="btn-copy">
-      <i data-lucide="copy" width="18"></i>
+      <i data-lucide="copy" width="20"></i>
       Copy Prompt
     </button>
+  </div>
+
+  <!-- Settings Screen -->
+  <div id="settings-screen" class="hidden" style="height: 100vh; display: flex; flex-direction: column;">
+    <header>
+      <div class="header-brand">
+        <span class="logo-name">Settings</span>
+      </div>
+    </header>
+    <div style="padding: 24px; flex: 1;">
+      <div style="margin-bottom: 24px;">
+        <label for="input-trigger-char"
+          style="display: block; font-size: 13px; font-weight: 600; color: var(--slate-700); margin-bottom: 8px;">
+          Trigger Character
+        </label>
+        <input type="text" id="input-trigger-char" class="search-input" style="padding-left: 12px;" placeholder="e.g. ?"
+          maxlength="1">
+        <p style="font-size: 12px; color: var(--slate-400); margin-top: 8px; line-height: 1.4;">
+          Character used to trigger prompt search in chat boxes.
+        </p>
+      </div>
+      <button id="btn-settings-save" class="btn-copy" style="margin: 0; width: 100%;">Save Settings</button>
+    </div>
+    <nav class="bottom-nav">
+      <div id="nav-home-settings" class="nav-item">
+        <i data-lucide="home" width="22"></i>
+        <span style="font-size: 10px; font-weight: 600;">Home</span>
+      </div>
+      <div id="nav-website-settings" class="nav-item">
+        <i data-lucide="external-link" width="22"></i>
+        <span style="font-size: 10px; font-weight: 600;">Website</span>
+      </div>
+      <div id="nav-settings-settings" class="nav-item active">
+        <i data-lucide="settings" width="22"></i>
+        <span style="font-size: 10px; font-weight: 600;">Settings</span>
+      </div>
+    </nav>
   </div>
 
   <!-- Modal for Add/Edit -->
@@ -88,17 +155,18 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3 id="modal-title">Add New</h3>
-        <button id="btn-modal-close" class="btn-icon"><i data-lucide="x" width="18"></i></button>
+        <button id="btn-modal-close" class="btn-icon"><i data-lucide="x" width="20"></i></button>
       </div>
       <div class="modal-body">
         <div id="topic-form" class="hidden">
-          <input type="text" id="input-topic-name" class="search-input" placeholder="Topic Name">
+          <input type="text" id="input-topic-name" class="search-input" style="padding-left: 12px;"
+            placeholder="Topic Name">
         </div>
         <div id="prompt-form" class="hidden">
-          <input type="text" id="input-prompt-title" class="search-input" placeholder="Prompt Title"
-            style="margin-bottom: 12px;">
-          <textarea id="input-prompt-content" class="search-input" placeholder="Prompt Content"
-            style="height: 120px; resize: none;"></textarea>
+          <input type="text" id="input-prompt-title" class="search-input"
+            style="padding-left: 12px; margin-bottom: 12px;" placeholder="Prompt Title">
+          <textarea id="input-prompt-content" class="search-input"
+            style="padding-left: 12px; height: 160px; resize: none;" placeholder="Prompt Content"></textarea>
         </div>
       </div>
       <div class="modal-footer">

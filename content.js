@@ -5,6 +5,7 @@ let filteredPrompts = []
 let selectedIndex = 0
 let lastQuery = ""
 let lastActiveElement = null
+let triggerChar = "?"
 
 // popup injection
 const popup = document.createElement("div")
@@ -21,14 +22,18 @@ observer.observe(document.body, { childList: true, subtree: true })
 
 // Load prompt cache from local storage
 function updateCache() {
-    chrome.storage.local.get(["cachedPrompts"], res => {
+    chrome.storage.local.get(["cachedPrompts", "triggerChar"], res => {
         cachedPrompts = res.cachedPrompts || []
+        if (res.triggerChar) triggerChar = res.triggerChar
     })
 }
 updateCache()
 chrome.storage.onChanged.addListener(changes => {
     if (changes.cachedPrompts) {
         cachedPrompts = changes.cachedPrompts.newValue || []
+    }
+    if (changes.triggerChar) {
+        triggerChar = changes.triggerChar.newValue || "?"
     }
 })
 
@@ -79,7 +84,11 @@ function handleInput(el) {
     const text = getInputValue(el)
     const pos = getSelectionOffset(el)
     const textBeforeCursor = text.substring(0, pos)
-    const match = textBeforeCursor.match(/(\?)([a-zA-Z0-9 ]*)$/)
+
+    // Escape special regex characters in triggerChar
+    const escapedTrigger = triggerChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(${escapedTrigger})([a-zA-Z0-9 ]*)$`)
+    const match = textBeforeCursor.match(regex)
 
     if (match) {
         const query = match[2].toLowerCase()
@@ -182,7 +191,10 @@ function insertPrompt(prompt) {
         const val = getInputValue(el);
         const pos = getSelectionOffset(el);
         const textBeforeCursor = val.substring(0, pos);
-        const match = textBeforeCursor.match(/(\?)([a-zA-Z0-9 ]*)$/);
+
+        const escapedTrigger = triggerChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedTrigger})([a-zA-Z0-9 ]*)$`);
+        const match = textBeforeCursor.match(regex);
 
         if (match) {
             const len = match[0].length;
@@ -214,7 +226,10 @@ function insertPrompt(prompt) {
     const val = getInputValue(el);
     const pos = getSelectionOffset(el);
     const textBeforeCursor = val.substring(0, pos);
-    const match = textBeforeCursor.match(/(\?)([a-zA-Z0-9 ]*)$/);
+
+    const escapedTrigger = triggerChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedTrigger})([a-zA-Z0-9 ]*)$`);
+    const match = textBeforeCursor.match(regex);
 
     if (match) {
         const len = match[0].length;
