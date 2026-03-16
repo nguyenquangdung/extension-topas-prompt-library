@@ -241,7 +241,6 @@ main {
   font-weight: 700;
   font-size: 15px;
   color: var(--slate-900);
-  padding-right: 48px;
 }
 
 .prompt-preview {
@@ -256,12 +255,11 @@ main {
 }
 
 .card-actions {
-  position: absolute;
-  top: 16px;
-  right: 12px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: flex-end;
   gap: 8px;
+  margin-top: 8px;
 }
 
 .action-icon {
@@ -277,13 +275,23 @@ main {
 }
 
 .action-icon:hover {
-  background: var(--brand-50);
-  color: var(--brand-primary);
+  background: var(--slate-200);
+  color: var(--slate-600);
+}
+
+.action-icon.copy-quick:hover {
+  background: #eff6ff; /* light blue */
+  color: #3b82f6;      /* blue */
 }
 
 .action-icon.pin-icon.active {
   background: var(--brand-50);
   color: var(--brand-primary);
+}
+
+.action-icon.delete-icon:hover {
+  background: #fee2e2; /* light red */
+  color: #ef4444;      /* red */
 }
 
 /* Floating Add Button */
@@ -488,4 +496,50 @@ main {
 .btn-add-topic-inline:hover {
   background: var(--brand-100);
   transform: translateY(-1px);
+}
+
+/* Update Banner */
+#update-banner {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px;
+  margin: 16px 20px 0 20px;
+}
+
+#update-banner.update-latest {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+#update-banner.update-outdated {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.update-text {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.btn-update {
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-update-download {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-update-download:hover {
+  background: #dc2626;
 }

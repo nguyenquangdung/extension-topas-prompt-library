@@ -87,11 +87,12 @@ function handleInput(el) {
 
     // Escape special regex characters in triggerChar
     const escapedTrigger = triggerChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const regex = new RegExp(`(${escapedTrigger})([a-zA-Z0-9 ]*)$`)
+    // Use \p{L} with 'u' flag to match any letter in any language (including Vietnamese)
+    const regex = new RegExp(`(${escapedTrigger})([\\p{L}0-9 ]*)$`, 'u')
     const match = textBeforeCursor.match(regex)
 
     if (match) {
-        const query = match[2].toLowerCase()
+        const query = match[2].trim()
         lastActiveElement = el
 
         if (query !== lastQuery) {
@@ -121,11 +122,39 @@ function getSelectionOffset(el) {
     }
 }
 
+function removeAccents(str) {
+    if (!str) return '';
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 function showSuggestions(query) {
-    filteredPrompts = cachedPrompts.filter(p =>
-        (p.title && p.title.toLowerCase().includes(query)) ||
-        (p.content && p.content.toLowerCase().includes(query))
-    ).slice(0, 10)
+    const normalizedQuery = removeAccents(query);
+
+    // Score and filter prompts
+    const scoredPrompts = cachedPrompts.map(p => {
+        let score = 0;
+        const normTitle = removeAccents(p.title);
+        const normContent = removeAccents(p.content);
+
+        if (normTitle.includes(normalizedQuery)) {
+            score = 2; // High priority: Match in title
+        } else if (normContent.includes(normalizedQuery)) {
+            score = 1; // Lower priority: Match in content
+        }
+
+        return { prompt: p, score: score, normTitle };
+    }).filter(item => item.score > 0);
+
+    // Sort by score (desc), then alphabetically by title
+    scoredPrompts.sort((a, b) => {
+        if (a.score !== b.score) {
+            return b.score - a.score;
+        }
+        return a.normTitle.localeCompare(b.normTitle);
+    });
+
+    // Extract top 10
+    filteredPrompts = scoredPrompts.slice(0, 10).map(item => item.prompt);
 
     if (!filteredPrompts.length) {
         hidePopup()
@@ -193,7 +222,7 @@ function insertPrompt(prompt) {
         const textBeforeCursor = val.substring(0, pos);
 
         const escapedTrigger = triggerChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${escapedTrigger})([a-zA-Z0-9 ]*)$`);
+        const regex = new RegExp(`(${escapedTrigger})([\\p{L}0-9 ]*)$`, 'u');
         const match = textBeforeCursor.match(regex);
 
         if (match) {
@@ -228,7 +257,7 @@ function insertPrompt(prompt) {
     const textBeforeCursor = val.substring(0, pos);
 
     const escapedTrigger = triggerChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedTrigger})([a-zA-Z0-9 ]*)$`);
+    const regex = new RegExp(`(${escapedTrigger})([\\p{L}0-9 ]*)$`, 'u');
     const match = textBeforeCursor.match(regex);
 
     if (match) {

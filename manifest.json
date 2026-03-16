@@ -41,7 +41,7 @@
         "128": "favicon.png"
     },
     "content_security_policy": {
-        "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://yhrxfnjpgurchgzvjtqw.supabase.co https://*.supabase.co; img-src 'self' https: data:;"
+        "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://yhrxfnjpgurchgzvjtqw.supabase.co https://*.supabase.co https://api.github.com; img-src 'self' https: data:;"
     },
     "host_permissions": [
         "<all_urls>"

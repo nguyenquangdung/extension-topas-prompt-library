@@ -79,10 +79,72 @@ async function init() {
                 showScreen('login');
             }
         });
+
+        // Check for updates
+        checkForUpdates();
     } catch (err) {
         console.error("Critical error during init:", err);
     } finally {
         console.groupEnd();
+    }
+}
+
+async function checkForUpdates() {
+    try {
+        const manifestRes = await fetch(chrome.runtime.getURL("manifest.json"));
+        const manifest = await manifestRes.json();
+        const currentVersion = manifest.version;
+
+        // Delegate the GitHub API call to background.js to bypass CSP
+        chrome.runtime.sendMessage({ action: 'checkForUpdates' }, (response) => {
+            if (!response || !response.success) {
+                showUpdateBanner('up-to-date', currentVersion);
+                return;
+            }
+
+            const latestVersion = response.latestVersion;
+            if (latestVersion && currentVersion) {
+                if (latestVersion.localeCompare(currentVersion, undefined, { numeric: true, sensitivity: 'base' }) > 0) {
+                    showUpdateBanner('outdated', currentVersion, latestVersion, response.zipball_url, response.html_url);
+                } else {
+                    showUpdateBanner('up-to-date', currentVersion);
+                }
+            }
+        });
+    } catch (e) {
+        console.log("Failed to check for updates:", e);
+    }
+}
+
+function showUpdateBanner(status, currentVersion, latestVersion, zipUrl, releaseUrl) {
+    if (document.getElementById('update-banner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'update-banner';
+
+    if (status === 'outdated') {
+        banner.classList.add('update-outdated');
+        banner.innerHTML = `
+            <div class="update-text">⚠️ Có bản mới v${latestVersion}! (Hiện tại: v${currentVersion})</div>
+            <button class="btn-update btn-update-download" id="btn-download-update">Tải Về</button>
+        `;
+        // Insert banner
+        const filtersContainer = screens.app.querySelector('.filters-container');
+        if (filtersContainer) {
+            screens.app.insertBefore(banner, filtersContainer);
+        }
+        document.getElementById('btn-download-update').onclick = () => {
+            window.open(zipUrl || releaseUrl, '_blank');
+        };
+    } else {
+        banner.classList.add('update-latest');
+        banner.innerHTML = `
+            <div class="update-text">✅ Đây là bản mới nhất (v${currentVersion})</div>
+        `;
+        const filtersContainer = screens.app.querySelector('.filters-container');
+        if (filtersContainer) {
+            screens.app.insertBefore(banner, filtersContainer);
+        }
     }
 }
 
@@ -142,6 +204,10 @@ async function loadPrompts() {
 
     const { data: prompts } = await query;
     state.prompts = prompts || [];
+    
+    // Sort alphabetically by title A-Z
+    state.prompts.sort((a, b) => a.title.localeCompare(b.title));
+
     renderPrompts();
 
     const { data: allPrompts } = await supabaseClient.from('prompts').select('id, title, content, topic_id');
@@ -191,15 +257,34 @@ function createPromptCard(prompt, isPinned) {
       <div class="action-icon pin-icon ${isPinned ? 'active' : ''}" data-id="${prompt.id}" title="${isPinned ? 'Unpin' : 'Pin'}">
         <i data-lucide="pin" width="14"></i>
       </div>
+      <div class="action-icon delete-icon" data-id="${prompt.id}" title="Delete Prompt">
+        <i data-lucide="trash-2" width="14"></i>
+      </div>
     </div>
   `;
 
-    card.onclick = (e) => {
+    card.onclick = async (e) => {
         const pinBtn = e.target.closest('.pin-icon');
         const copyBtn = e.target.closest('.copy-quick');
+        const deleteBtn = e.target.closest('.delete-icon');
 
         if (pinBtn) {
             togglePin(prompt.id);
+            return;
+        }
+
+        if (deleteBtn) {
+            const confirmed = confirm("Bạn có chắc chắn muốn xóa prompt này?");
+            if (confirmed) {
+                try {
+                    const { error } = await supabaseClient.from('prompts').delete().eq('id', prompt.id);
+                    if (error) throw error;
+                    await loadPrompts(); // Refresh the list
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    alert("Lỗi khi xóa prompt: " + err.message);
+                }
+            }
             return;
         }
 
@@ -368,28 +453,43 @@ function attachGlobalEvents() {
         try {
             if (modalMode === 'topic') {
                 const name = modal.topicName.value.trim();
-                if (!name) return;
-                await supabaseClient.from('topics').insert([{ name, market_id: state.selectedMarketId }]);
+                if (!name) {
+                    alert('Vui lòng nhập tên chủ đề.');
+                    return;
+                }
+                const { error } = await supabaseClient.from('topics').insert([{ name, market_id: state.selectedMarketId }]);
+                if (error) throw error;
             } else {
                 const title = modal.promptTitle.value.trim();
                 const content = modal.promptContent.value.trim();
-                if (!title || !content) return;
+                if (!title || !content) {
+                    alert('Vui lòng nhập tiêu đề và nội dung.');
+                    return;
+                }
+                
+                if (!state.selectedTopicId) {
+                    alert('Vui lòng chọn một Chủ đề (Topic) trước khi lưu Prompt.');
+                    return;
+                }
 
                 if (editId) {
-                    await supabaseClient.from('prompts').update({ title, content }).eq('id', editId);
+                    const { error } = await supabaseClient.from('prompts').update({ title, content }).eq('id', editId);
+                    if (error) throw error;
                     state.currentPrompt.title = title;
                     state.currentPrompt.content = content;
                     showDetail(state.currentPrompt);
                 } else {
-                    await supabaseClient.from('prompts').insert([{
-                        title, content, topic_id: state.selectedTopicId, market_id: state.selectedMarketId
+                    const { error } = await supabaseClient.from('prompts').insert([{
+                        title, content, topic_id: state.selectedTopicId
                     }]);
+                    if (error) throw error;
                 }
             }
             hideModal();
             modalMode === 'topic' ? loadTopics() : loadPrompts();
         } catch (err) {
             console.error("Save error:", err);
+            alert("Lỗi khi lưu: " + (err.message || 'Thử lại sau.'));
         }
     };
 }
