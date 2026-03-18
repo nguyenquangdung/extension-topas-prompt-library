@@ -3,6 +3,85 @@ console.log("App.js loading...");
 const SUPABASE_URL = 'https://yhrxfnjpgurchgzvjtqw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlocnhmbmpwZ3VyY2hnenZqdHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1OTU4MjQsImV4cCI6MjA4ODE3MTgyNH0.ig6y9DCHNX-nyN3Rt48Dp7FGA-ZpAqMkFjSmzsAKREw';
 
+// --- Custom Modals ---
+function customAlert(message) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '9999';
+    
+    const card = document.createElement('div');
+    card.className = 'modal-card';
+    card.style.maxWidth = '300px';
+    card.style.textAlign = 'center';
+    card.style.padding = '20px';
+    
+    const text = document.createElement('div');
+    text.style.marginBottom = '16px';
+    text.style.fontSize = '14px';
+    text.style.color = 'var(--slate-800)';
+    text.textContent = message;
+    
+    const btn = document.createElement('button');
+    btn.className = 'btn-copy';
+    btn.style.margin = '0';
+    btn.style.width = '100%';
+    btn.textContent = 'OK';
+    btn.onclick = () => overlay.remove();
+    
+    card.appendChild(text);
+    card.appendChild(btn);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+}
+
+function customConfirm(message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.zIndex = '9999';
+        
+        const card = document.createElement('div');
+        card.className = 'modal-card';
+        card.style.maxWidth = '300px';
+        card.style.textAlign = 'center';
+        card.style.padding = '20px';
+        
+        const text = document.createElement('div');
+        text.style.marginBottom = '16px';
+        text.style.fontSize = '14px';
+        text.style.color = 'var(--slate-800)';
+        text.textContent = message;
+        
+        const btnGroup = document.createElement('div');
+        btnGroup.style.display = 'flex';
+        btnGroup.style.gap = '8px';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn-icon';
+        cancelBtn.style.flex = '1';
+        cancelBtn.style.border = '1px solid var(--slate-200)';
+        cancelBtn.style.borderRadius = '8px';
+        cancelBtn.style.justifyContent = 'center';
+        cancelBtn.textContent = 'Hủy';
+        cancelBtn.onclick = () => { overlay.remove(); resolve(false); };
+        
+        const okBtn = document.createElement('button');
+        okBtn.className = 'btn-copy';
+        okBtn.style.margin = '0';
+        okBtn.style.flex = '1';
+        okBtn.style.background = 'var(--rose-500)';
+        okBtn.textContent = 'Xóa';
+        okBtn.onclick = () => { overlay.remove(); resolve(true); };
+        
+        btnGroup.appendChild(cancelBtn);
+        btnGroup.appendChild(okBtn);
+        card.appendChild(text);
+        card.appendChild(btnGroup);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+    });
+}
+
 let supabaseClient;
 try {
     console.log("Creating Supabase client...");
@@ -13,12 +92,14 @@ try {
     console.log("Supabase client created.");
 } catch (e) {
     console.error("Supabase creation failed:", e);
-    alert("Lỗi khởi tạo Supabase: " + e.message);
+    customAlert("Lỗi khởi tạo Supabase: " + e.message);
 }
 
 // --- State ---
 const state = {
     user: null,
+    userRoles: [],
+    isSuperAdmin: false,
     markets: [],
     topics: [],
     prompts: [],
@@ -171,12 +252,14 @@ async function loadMarkets() {
     const { data: markets } = await supabaseClient.from('markets').select('*').order('name');
     state.markets = markets || [];
 
-    const { data: roles } = await supabaseClient.from('user_market_roles').select('market_id').eq('user_id', state.user.id);
-    const allowedIds = roles?.map(r => r.market_id) || [];
+    const { data: roles } = await supabaseClient.from('user_market_roles').select('market_id, role').eq('user_id', state.user.id);
+    state.userRoles = roles || [];
+    const allowedIds = state.userRoles.map(r => r.market_id);
 
     const { data: userProfile } = await supabaseClient.from('users').select('is_super_admin').eq('id', state.user.id).single();
+    state.isSuperAdmin = userProfile?.is_super_admin || false;
 
-    if (!userProfile?.is_super_admin) {
+    if (!state.isSuperAdmin) {
         state.markets = state.markets.filter(m => allowedIds.includes(m.id));
     }
 
@@ -242,6 +325,22 @@ function renderPrompts() {
 
     document.getElementById('pinned-section').classList.toggle('hidden', pinnedPrompts.length === 0);
     if (window.lucide) lucide.createIcons();
+
+    // Update UI Permissions for Add/Edit/Delete actions based on user roles
+    const currentRole = state.userRoles.find(r => r.market_id === state.selectedMarketId)?.role;
+    const canEdit = state.isSuperAdmin || currentRole === 'editor' || currentRole === 'manager';
+
+    const addTopicBtn = document.getElementById('btn-add-topic');
+    const addPromptBtn = document.getElementById('btn-add-prompt-float');
+    const editPromptBtn = document.getElementById('btn-edit-prompt');
+
+    if (addTopicBtn) addTopicBtn.style.display = canEdit ? '' : 'none';
+    if (addPromptBtn) addPromptBtn.style.display = canEdit ? '' : 'none';
+    if (editPromptBtn) editPromptBtn.style.display = canEdit ? '' : 'none';
+    
+    document.querySelectorAll('.delete-icon').forEach(el => {
+        el.style.display = canEdit ? '' : 'none';
+    });
 }
 
 function createPromptCard(prompt, isPinned) {
@@ -274,7 +373,7 @@ function createPromptCard(prompt, isPinned) {
         }
 
         if (deleteBtn) {
-            const confirmed = confirm("Bạn có chắc chắn muốn xóa prompt này?");
+            const confirmed = await customConfirm("Bạn có chắc chắn muốn xóa prompt này?");
             if (confirmed) {
                 try {
                     const { error } = await supabaseClient.from('prompts').delete().eq('id', prompt.id);
@@ -282,7 +381,7 @@ function createPromptCard(prompt, isPinned) {
                     await loadPrompts(); // Refresh the list
                 } catch (err) {
                     console.error("Delete error:", err);
-                    alert("Lỗi khi xóa prompt: " + err.message);
+                    customAlert("Lỗi khi xóa prompt: " + err.message);
                 }
             }
             return;
@@ -347,7 +446,7 @@ function attachGlobalEvents() {
                 });
             } catch (err) {
                 console.error("Login error:", err);
-                alert("Lỗi đăng nhập: " + err.message);
+                customAlert("Lỗi đăng nhập: " + err.message);
             }
         };
     }
@@ -454,7 +553,7 @@ function attachGlobalEvents() {
             if (modalMode === 'topic') {
                 const name = modal.topicName.value.trim();
                 if (!name) {
-                    alert('Vui lòng nhập tên chủ đề.');
+                    customAlert('Vui lòng nhập tên chủ đề.');
                     return;
                 }
                 const { error } = await supabaseClient.from('topics').insert([{ name, market_id: state.selectedMarketId }]);
@@ -463,12 +562,12 @@ function attachGlobalEvents() {
                 const title = modal.promptTitle.value.trim();
                 const content = modal.promptContent.value.trim();
                 if (!title || !content) {
-                    alert('Vui lòng nhập tiêu đề và nội dung.');
+                    customAlert('Vui lòng nhập tiêu đề và nội dung.');
                     return;
                 }
                 
                 if (!state.selectedTopicId) {
-                    alert('Vui lòng chọn một Chủ đề (Topic) trước khi lưu Prompt.');
+                    customAlert('Vui lòng chọn một Chủ đề (Topic) trước khi lưu Prompt.');
                     return;
                 }
 
@@ -489,7 +588,7 @@ function attachGlobalEvents() {
             modalMode === 'topic' ? loadTopics() : loadPrompts();
         } catch (err) {
             console.error("Save error:", err);
-            alert("Lỗi khi lưu: " + (err.message || 'Thử lại sau.'));
+            customAlert("Lỗi khi lưu: " + (err.message || 'Thử lại sau.'));
         }
     };
 }
